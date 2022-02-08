@@ -1,0 +1,89 @@
+/*
+	Example: A tip calculation FIS (fuzzy inference system)
+	Calculates tip based on 'servie' and 'food'
+
+	If you want to about this example (and fuzzy logic), please 
+	read Matlab's tutorial on fuzzy logic toolbox 
+	http://www.mathworks.com/access/helpdesk/help/pdf_doc/fuzzy/fuzzy.pdf
+
+									Pablo Cingolani 
+									pcingola@users.sourceforge.net
+*/
+
+FUNCTION_BLOCK demo1	// Block definition (there may be more than one block per file)
+
+VAR_INPUT				// Define input variables
+	probability : REAL;
+	connectivity : REAL;
+	mobility : REAL;	
+END_VAR
+
+VAR_OUTPUT				// Define output variable
+	Fitness : REAL;
+END_VAR
+
+FUZZIFY probability			// Fuzzify input variable 'proability': {'bad', 'medium' , 'good'}
+	TERM pBad := (0, 0) (0, 1) (0.6, 0) ;
+	TERM pMedium := (0, 0) (0.6, 1) (0.8, 0) ;
+	TERM pGood := (0.6, 0) (1, 1) (1, 0);
+END_FUZZIFY
+
+FUZZIFY connectivity			// persistant time
+	TERM cBad := (0, 0) (0, 1) (0.5, 0) ;
+	TERM cMedium := (0, 0) (0.5, 1) (1, 0) ;
+	TERM cGood := (0.5, 0) (1, 1) (1, 0);
+END_FUZZIFY
+
+FUZZIFY mobility
+	TERM mBad := (0, 0) (0, 1) (0.5, 0) ;
+	TERM mMedium := (0, 0) (0.5, 1) (1, 0) ;
+	TERM mGood := (0.5, 0) (1, 1) (1, 0);
+END_FUZZIFY
+
+DEFUZZIFY Fitness			
+	TERM VeryBad := (0, 0) (0, 1) (0.2, 0) ;
+	TERM Bad := (0, 0) (0.2, 1) (0.4, 0)  ;
+	TERM NotAcceptable := (0.2, 0) (0.4, 1) (0.6, 0) ;
+	TERM Acceptable := (0.4, 0) (0.6, 1) (0.8, 0) ;
+	TERM Good := (0.6, 0) (0.8, 1) (1, 0) ;		
+	TERM Excellent := (0.8, 0) (1, 1) (1, 0) ;
+	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)	
+END_DEFUZZIFY
+
+RULEBLOCK No1
+	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'or' to fulfill DeMorgan's Law)
+	ACT : MIN;			// Use 'min' activation method
+	ACCU : MAX;			// Use 'max' accumulation method
+
+	RULE 1: IF probability IS pGood AND connectivity IS cGood AND mobility IS mGood THEN Fitness IS Excellent;
+	RULE 2: IF probability IS pGood AND connectivity IS cGood AND mobility IS mMedium THEN Fitness IS Good;
+	RULE 3: IF probability IS pGood AND connectivity IS cGood AND mobility IS mBad THEN Fitness IS NotAcceptable;
+	RULE 4: IF probability IS pGood AND connectivity IS cMedium AND mobility IS mGood THEN Fitness IS Good;	
+	RULE 5: IF probability IS pGood AND connectivity IS cMedium AND mobility IS mMedium THEN Fitness IS Acceptable;		
+	RULE 6: IF probability IS pGood AND connectivity IS cMedium AND mobility IS mBad THEN Fitness IS Bad;	
+	RULE 7: IF probability IS pGood AND connectivity IS cBad AND mobility IS mGood THEN Fitness IS NotAcceptable;	
+	RULE 8: IF probability IS pGood AND connectivity IS cBad AND mobility IS mMedium THEN Fitness IS Bad;
+	RULE 9: IF probability IS pGood AND connectivity IS cBad AND mobility IS mBad THEN Fitness IS Bad;
+	RULE 10: IF probability IS pMedium AND connectivity IS cGood AND mobility IS mGood THEN Fitness IS Good;	
+	RULE 11: IF probability IS pMedium AND connectivity IS cGood AND mobility IS mMedium THEN Fitness IS Acceptable;
+	RULE 12: IF probability IS pMedium AND connectivity IS cGood AND mobility IS mBad THEN Fitness IS Bad;			
+	RULE 13: IF probability IS pMedium AND connectivity IS cMedium AND mobility IS mGood THEN Fitness IS Acceptable;	
+	RULE 14: IF probability IS pMedium AND connectivity IS cMedium AND mobility IS mMedium THEN Fitness IS NotAcceptable;
+	RULE 15: IF probability IS pMedium AND connectivity IS cMedium AND mobility IS mBad THEN Fitness IS Bad;
+	RULE 16: IF probability IS pMedium AND connectivity IS cBad AND mobility IS mGood THEN Fitness IS Bad;
+	RULE 17: IF probability IS pMedium AND connectivity IS cBad AND mobility IS mMedium THEN Fitness IS Bad;	
+	RULE 18: IF probability IS pMedium AND connectivity IS cBad AND mobility IS mBad THEN Fitness IS Bad;
+	RULE 19: IF probability IS pBad AND connectivity IS cGood AND mobility IS mGood THEN Fitness IS NotAcceptable;
+	RULE 20: IF probability IS pBad AND connectivity IS cGood AND mobility IS mMedium THEN Fitness IS Bad;			
+	RULE 21: IF probability IS pBad AND connectivity IS cGood AND mobility IS mBad THEN Fitness IS Bad;
+	RULE 22: IF probability IS pBad AND connectivity IS cMedium AND mobility IS mGood THEN Fitness IS Bad;
+	RULE 23: IF probability IS pBad AND connectivity IS cMedium AND mobility IS mMedium THEN Fitness IS Bad;
+	RULE 24: IF probability IS pBad AND connectivity IS cMedium AND mobility IS mBad THEN Fitness IS VeryBad;		
+	RULE 25: IF probability IS pBad AND connectivity IS cBad AND mobility IS mGood THEN Fitness IS Bad;
+	RULE 26: IF probability IS pBad AND connectivity IS cBad AND mobility IS mMedium THEN Fitness IS VeryBad;
+	RULE 27: IF probability IS pBad AND connectivity IS cBad AND mobility IS mBad THEN Fitness IS VeryBad;	
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
+
